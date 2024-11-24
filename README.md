@@ -14,7 +14,7 @@ Then on the code.py file there is a hardcoded message, the class is instantiated
 
 ## Demo:
 
-<video controls src="demo.mp4" title="Title"></video>
+https://github.com/user-attachments/assets/bfef846b-3994-4e8d-9b5a-6cedf1874253
 
 ## Contributing
 
