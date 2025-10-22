@@ -2,6 +2,8 @@ import asyncio
 import board
 import digitalio
 import busio
+import touchio
+import microcontroller
 from lcd.lcd import LCD
 from lcd.i2c_pcf8574_interface import I2CPCF8574Interface
 
@@ -14,6 +16,12 @@ class CodeLed():
         self.i2c = i2c
         cols = 16
         rows = 2
+        
+        self.restart_btn = touchio.TouchIn(board.IO6)
+        self.show_btn = touchio.TouchIn(board.IO7)
+        
+        self.restart_btn.threshold = self.restart_btn.raw_value + 500
+        self.show_btn.threshold = self.show_btn.raw_value + 500
         try:
             self.lcd = LCD(I2CPCF8574Interface(self.i2c, 0x27), num_rows=rows, num_cols=cols)
         except:        
@@ -86,6 +94,7 @@ class CodeLed():
         return
 
     async def tx(self, code = "MORSE", msg="SOS",t_ref = 500):
+        self.lcd.clear()
         if code == "MORSE":
             tdot = t_ref
             tdash = tdot * 3
@@ -100,7 +109,7 @@ class CodeLed():
                 if self.lcd is not None:
                     self.lcd.clear()
                     self.lcd.set_cursor_pos(0, 0)
-                    self.lcd.print(l)
+                    #self.lcd.print(l)
                     self.lcd.set_cursor_pos(1, 0)
                     self.lcd.print(char)
                 i += 1
@@ -140,6 +149,47 @@ class CodeLed():
                 await asyncio.sleep_ms(t_ref)
         else:
             pass
+        
+        self.lcd.set_cursor_pos(0, 0)
+        self.lcd.print("Reiniciar")
+        self.lcd.set_cursor_pos(1, 0)
+        self.lcd.print("Mostrar")
+        
+    async def restart_game(self):
+        while not self.restart_btn.value:
+            await asyncio.sleep_ms(50)
+            
+    async def show_msg(self):
+        while not self.show_btn.value:
+            await asyncio.sleep_ms(50)
+            
+    async def count_2_reset(self):
+        count = 0
+        while True:
+            if self.restart_btn.value:
+                print(count)
+                count += 1
+            if count > 10:
+                await asyncio.sleep_ms(1000)
+                microcontroller.reset()
+            await asyncio.sleep_ms(200)
+            
+    async def print_msg(self, msg_original):
+        start = 0
+        msg = msg_original[:-1]
+        while True:
+            self.lcd.set_cursor_pos(1, 0)
+            if(len(msg)>16):
+                if(start+16<len(msg)):
+                    self.lcd.print(msg[start:start+16])
+                    start += 1
+                else:
+                    start = 0
+                await asyncio.sleep_ms(500)
+            else:
+                self.lcd.set_cursor_pos(1, 0)
+                self.lcd.print(msg)
+                await asyncio.sleep_ms(500)
             
 async def main():
     i2c = busio.I2C(scl = board.IO10, sda = board.IO11)
