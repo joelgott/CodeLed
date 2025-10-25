@@ -20,8 +20,10 @@ class CodeLed():
         self.restart_btn = touchio.TouchIn(board.IO6)
         self.show_btn = touchio.TouchIn(board.IO7)
         
-        self.restart_btn.threshold = self.restart_btn.raw_value + 500
-        self.show_btn.threshold = self.show_btn.raw_value + 500
+        print("restart value:" + str(self.restart_btn.raw_value))
+        print("show value:" + str(self.show_btn.raw_value))
+        self.restart_btn.threshold = 40000
+        self.show_btn.threshold = 50000
         try:
             self.lcd = LCD(I2CPCF8574Interface(self.i2c, 0x27), num_rows=rows, num_cols=cols)
         except:        
