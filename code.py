@@ -34,7 +34,7 @@ async def main():
         printing = asyncio.create_task(morse.print_msg(picked_msg))
         await morse.restart_game()
         printing.cancel()
-        await asyncio.sleep(3)                
+        await asyncio.sleep(1)                
 
 if __name__ == "__main__":
     asyncio.run(main())

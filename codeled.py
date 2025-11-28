@@ -108,20 +108,20 @@ class CodeLed():
                 self.lcd.set_backlight(True)
             for l in msg:
                 char = self.MORSE_CODE.get(l.upper())
-                if self.lcd is not None:
+                if self.lcd is not None and char is not None:
                     self.lcd.clear()
                     self.lcd.set_cursor_pos(0, 0)
                     #self.lcd.print(l)
                     self.lcd.set_cursor_pos(1, 0)
                     self.lcd.print(char)
-                i += 1
-                for symbol in char:
-                    if symbol==".":
-                        await self.flash(tdot,tdot)
-                    if symbol=="-":
-                        await self.flash(tdash,tdot)
-                    if symbol==" ":
-                        await asyncio.sleep_ms(tword)   
+                    i += 1
+                    for symbol in char:
+                        if symbol==".":
+                            await self.flash(tdot,tdot)
+                        if symbol=="-":
+                            await self.flash(tdash,tdot)
+                        if symbol==" ":
+                            await asyncio.sleep_ms(tword)   
                 await asyncio.sleep_ms(tdash)        
         elif code == "BRAILLE":
             if self.lcd is not None:
@@ -152,16 +152,17 @@ class CodeLed():
         else:
             pass
         
-        self.lcd.set_cursor_pos(0, 0)
-        self.lcd.print("Reiniciar")
-        self.lcd.set_cursor_pos(1, 0)
-        self.lcd.print("Mostrar")
-        
     async def restart_game(self):
+        self.lcd.clear()
+        self.lcd.set_cursor_pos(0, 0)
+        self.lcd.print("Iniciar")
         while not self.restart_btn.value:
             await asyncio.sleep_ms(50)
             
     async def show_msg(self):
+        self.lcd.clear()
+        self.lcd.set_cursor_pos(1, 0)
+        self.lcd.print("Mostrar")    
         while not self.show_btn.value:
             await asyncio.sleep_ms(50)
             
@@ -177,22 +178,26 @@ class CodeLed():
             await asyncio.sleep_ms(200)
             
     async def print_msg(self, msg_original):
-        start = 0
-        msg = msg_original[:-1]
-        while True:
-            self.lcd.set_cursor_pos(1, 0)
-            if(len(msg)>16):
-                if(start+16<len(msg)):
-                    self.lcd.print(msg[start:start+16])
-                    start += 1
-                else:
-                    start = 0
-                await asyncio.sleep_ms(500)
+        msg = remove_non_alpha(msg_original) 
+        while True:           
+            if(len(msg)>=16):
+                for i in range(len(msg) - 15):
+                    rotated_string_left = msg[i:] + msg[:i]
+                    self.lcd.set_cursor_pos(1, 0)
+                    self.lcd.print(rotated_string_left[:16])
+                    await asyncio.sleep_ms(1000)
             else:
-                self.lcd.set_cursor_pos(1, 0)
-                self.lcd.print(msg)
-                await asyncio.sleep_ms(500)
-            
+                self.lcd.print(msg)                
+        
+            await asyncio.sleep_ms(2000)
+
+def remove_non_alpha(input_string):
+    result_string = ""
+    for char in input_string:
+        if char.isalpha() or char == ' ':
+            result_string += char
+    return result_string
+
 async def main():
     i2c = busio.I2C(scl = board.IO10, sda = board.IO11)
     morse = CodeLed(board.IO9, i2c)
